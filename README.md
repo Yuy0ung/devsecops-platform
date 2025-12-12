@@ -1,4 +1,6 @@
-# DAST demo
+# DevSecOps-DAST
+
+devsecops平台的DAST模块
 
 流程：IP - 端口 - 指纹 - POC
 
@@ -15,20 +17,11 @@
 * 前端vue+ant-design+axios，构建效率快
 * 任务调度使用redis，数据库使用mysql
 
-## ToDoList
+## 预览
 
-- [x] workflow设计
-- [x] 工具选择
-- [x] nuclei-demo
-- [x] naabu-demo
-- [x] httpx-demo
-- [x] 工具接口开发
-- [x] 任务队列
-- [x] 数据整理
-- [x] 前端设计
-- [x] 权限校验
-- [ ] 复杂功能、自由度
-- [ ] 分布式
+平台样式：
+
+![baaba6738c60fd8e5c242d603cf73c65](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/baaba6738c60fd8e5c242d603cf73c65.png)
 
 ## 工作流（暂无指纹）
 
@@ -55,6 +48,21 @@ flowchart TD
 * 前端：antdesign-vue + axios
 * 后端：gin
 * 数据库：redis + go-redis + mysql + gorm
+
+## ToDoList
+
+- [x] workflow设计
+- [x] 工具选择
+- [x] nuclei-demo
+- [x] naabu-demo
+- [x] httpx-demo
+- [x] 工具接口开发
+- [x] 任务队列
+- [x] 数据整理
+- [x] 前端设计
+- [x] 权限校验
+- [ ] 复杂功能、自由度
+- [ ] 分布式
 
 ## 配置
 
