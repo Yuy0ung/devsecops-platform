@@ -11,8 +11,9 @@
 * 针对IP做端口扫描，naabu很不错，projectdiscovery的项目，在go的库中也有sdk
 * 指纹用ehole，go写的比较快（待定）
 * poc用nuclei，比较好找poc，也有稳定的go的SDK
-* 后端语言用go，框架用gin，轻量快速
+* 后端语言使用go，框架使用gin，轻量快速
 * 前端vue+ant-design+axios，构建效率快
+* 任务调度使用redis，数据库使用mysql
 
 ## ToDoList
 
@@ -47,37 +48,13 @@ flowchart TD
 
 ![QQ_1764141406805](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1764141406805.png)
 
-## 架构
+## 技术
 
-暂定的多节点的架构：
+技术栈
 
-~~~
-                 ┌────────────────────────┐
-                 │        前端 UI (Antd)   │
-                 └─────────────┬──────────┘
-                               ↓ REST
-                 ┌────────────────────────┐
-                 │   调度中心 (Gin + Redis)│
-                 │  - 写入待扫描任务        │
-                 │  - 控制任务状态          │
-                 │  - 汇总结果/展示         │
-                 └─────────────┬──────────┘
-                         gRPC  ↑   gRPC返回结果
-        ┌──────────────────────┴───────────────────────┐
-        │                      │                       │
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│ Worker Node1 │      │ Worker Node2 │      │ Worker NodeN │
-│ masscan→ehole│ ...  │ masscan→ehole│ ...  │ masscan→ehole│ ...
-│ →nuclei →回传 │      │ →nuclei →回传│      │  →nuclei →回传│
-└──────────────┘      └──────────────┘      └──────────────┘
-~~~
-
-技术：
-
-* 前端：antdesign-vue+axios
+* 前端：antdesign-vue + axios
 * 后端：gin
-* 数据库：redis + go-redis
-* 调度：gRPC
+* 数据库：redis + go-redis + mysql + gorm
 
 ## 配置
 
