@@ -1,61 +1,84 @@
-# DevSecOps-DAST
+# DevSecOps平台demo
 
-devsecops平台的DAST模块
-
-流程：IP - 端口 - POC
-
+作者在学习SDL过程中，为了实践一下，更加了解建设的思路，于是有了此项目
 
 ## 设计
 
-考虑到开发效率问题，暂时以现成的工具做实现：
+### 平台架构
 
-* 针对IP做端口扫描，naabu很不错，projectdiscovery的项目，在go的库中也有sdk
-* 指纹用ehole，go写的比较快（待定）
-* poc用nuclei，比较好找poc，也有稳定的go的SDK
-* 后端语言使用go，框架使用gin，轻量快速
-* 前端vue+ant-design+axios，构建效率快
+* 后端使用go + gin + gorm + go-redis
+* 前端vue + ant-design + axios
 * 任务调度使用redis，数据库使用mysql
 
-## 预览
+### DAST模块
 
-平台样式：
+IP+测活+端口扫描+POC检测
+
+考虑到开发效率问题，暂时以现成的工具做实现：
+
+* http测活自写规则，httpx的sdk不成熟变化太快
+
+* 针对IP做端口扫描，naabu很不错，projectdiscovery的项目，在go的库中也有sdk
+* 没有比较好的指纹规则，暂时没写指纹
+* poc用nuclei，比较好找poc，也有稳定的go的SDK
+
+由于没有考虑自主实现公司场景的API网管模拟，所以没有做基于流量的被动扫描相关功能
+
+### SAST模块
+
+* 静态扫描器选择使用的CodeQL
+* 扫描目标为git仓库和自主上传已构建的数据库两种
+* 规则采用的官方CWE+自主编写增量规则
+* 平台前后端基于扫描结果实现代码、污点的预览，优化使用体验
+
+### SCA模块
+
+开发中......
+
+## 功能预览
+
+### 登陆校验
+
+账号/密码默认为：
+
+* Yuy0ung
+* Yuy0ung@test123
+
+![QQ_1768814244012](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768814244012.png)
+
+### DAST模块
+
+任务列表：
+
+![QQ_1768813028418](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768813028418.png)
+
+扫描结果：
 
 ![baaba6738c60fd8e5c242d603cf73c65](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/baaba6738c60fd8e5c242d603cf73c65.png)
 
-## 工作流（暂无指纹）
+### SAST模块
 
-~~~mermaid
-flowchart TD
-    A[传入IP列表 -] --> B[调用naabu进行端口扫描 - -]
-    B --> C[httpx测活 -]
-    C --> D{http协议？}
-    D -->|是| E[加上http/https头 --]
-    E --> F[nuclei引擎  -]
-    D -->|否| F
-~~~
+扫描选项配置：
+![QQ_1768812881808](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768812881808.png)
 
-## 功能
+任务列表：
 
-当前功能实现：
+![QQ_1768812840452](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768812840452.png)
 
-![QQ_1764141406805](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1764141406805.png)
+扫描结果+代码预览+污点追踪：
 
-## 技术
+![QQ_1768812803040](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768812803040.png)
 
-技术栈
+### SCA模块
 
-* 前端：antdesign-vue + axios
-* 后端：gin
-* 数据库：redis + go-redis + mysql + gorm
+开发中......
 
 ## ToDoList
 
-- [x] workflow设计
-- [x] 工具选择
-- [x] nuclei-demo
-- [x] naabu-demo
-- [x] httpx-demo
-- [x] 工具接口开发
+- [x] 基本设计
+- [x] DAST模块开发
+- [x] SAST模块开发
+- [ ] SCA模块开发
 - [x] 任务队列
 - [x] 数据整理
 - [x] 前端设计
@@ -71,7 +94,9 @@ sudo apt install redis-server -y
 go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 
 go mod tidy
-
+export CGO_ENABLED=1 CC=gcc 
+export CGO_CFLAGS="-I/usr/include/pcap" 
+export CGO_LDFLAGS="-lpcap" 
 go run main.go
 ~~~
 
@@ -115,10 +140,7 @@ sudo nginx -t
 
 mysql：
 
-~~~mysql
-ALTER USER 'root'@'localhost' IDENTIFIED BY '你的mysql密码;
+自行在main.go中设置密码
 
-CREATE DATABASE IF NOT EXISTS dast
-  DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_general_ci;
-~~~
+redis：
+自行在main.go中设置密码
