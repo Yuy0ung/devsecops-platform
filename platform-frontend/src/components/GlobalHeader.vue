@@ -37,7 +37,7 @@ const routeMap: Record<string, string[]> = {
   // SAST
   "/sast": ["SAST"],
   "/sast/codeql": ["SAST", "CodeQL"],
-  "/sast/vuln": ["SAST", "漏洞列表"],
+  "/sast/vuln": ["SAST", "任务列表"],
 
   // SCA
   "/sca": ["SCA"],

@@ -42,3 +42,27 @@ type TaskLog struct {
 	Message   string    `gorm:"type:text" json:"message,omitempty"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdAt"`
 }
+
+type SastTask struct {
+	ID        string    `gorm:"primaryKey;size:64" json:"id"`
+	Type      string    `gorm:"size:32;not null" json:"type"` // "Git" or "Upload"
+	Target    string    `gorm:"size:512;not null" json:"target"`
+	Branch    string    `gorm:"size:128" json:"branch,omitempty"`
+	Status    string    `gorm:"size:32;not null" json:"status"` // pending, running, completed, failed
+	Rules     string    `gorm:"type:json" json:"rules"`         // Selected CWEs
+	Result    string    `gorm:"type:text" json:"result,omitempty"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"startTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+}
+
+type SastFinding struct {
+	ID          uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
+	TaskID      string `gorm:"size:64;index" json:"taskId"`
+	RuleID      string `gorm:"size:64" json:"ruleId"`
+	Description string `gorm:"size:512" json:"description"`
+	Severity    string `gorm:"size:32" json:"severity"`
+	File        string `gorm:"size:512" json:"file"`
+	Line        int    `gorm:"default:0" json:"line"`
+	Message     string `gorm:"type:text" json:"message"`
+	CodeFlow    string `gorm:"type:json" json:"codeFlow,omitempty"`
+}

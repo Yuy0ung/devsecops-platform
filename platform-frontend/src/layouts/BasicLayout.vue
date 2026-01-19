@@ -61,7 +61,7 @@ const siderWidth = computed(() => (collapsed.value ? 80 : 200));
 
 #basicLayout .content {
   background: linear-gradient(to right, #fefefe, #fff);
-  padding: 20px;
+  /* padding: 20px; */
   flex: 1;
   overflow-y: auto;
 }
@@ -69,6 +69,8 @@ const siderWidth = computed(() => (collapsed.value ? 80 : 200));
 #basicLayout .footer {
   background: #ffffff;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
+  padding-top: 10px;
+  height: 30px;
 }
 </style>

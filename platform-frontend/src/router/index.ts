@@ -5,6 +5,10 @@ import DastList from "@/modules/dast/pages/DastList.vue";
 import TargetList from "@/modules/dast/pages/TargetList.vue";
 import LoginPage from "@/pages/LoginPage.vue";
 
+import CodeqlScan from "@/modules/sast/pages/CodeqlScan.vue";
+import VulnList from "@/modules/sast/pages/VulnList.vue";
+import VulnDetail from "@/modules/sast/pages/VulnDetail.vue";
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/login",
@@ -39,13 +43,19 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/sast/codeql",
     name: "sastCodeql",
-    component: DesigningPage,
+    component: CodeqlScan,
     meta: { requiresAuth: true },
   },
   {
     path: "/sast/vuln",
     name: "sastVuln",
-    component: DesigningPage,
+    component: VulnList,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/sast/vuln/:id",
+    name: "sastVulnDetail",
+    component: VulnDetail,
     meta: { requiresAuth: true },
   },
   {

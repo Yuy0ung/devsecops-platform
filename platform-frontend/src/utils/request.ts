@@ -4,8 +4,8 @@ import router from "@/router";
 import { message } from "ant-design-vue";
 
 const request = axios.create({
-  //   baseURL: "http://160.30.231.213:5003/", // 后端地址
-  baseURL: "http://127.0.0.1:5003/",
+  baseURL: "http://160.30.231.213:5003/", // 后端地址
+  // baseURL: "http://127.0.0.1:5003/",
   timeout: 10000,
 });
 

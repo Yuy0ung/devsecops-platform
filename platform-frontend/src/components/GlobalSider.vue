@@ -44,7 +44,7 @@
           <template #icon>
             <BarsOutlined />
           </template>
-          漏洞列表
+          任务列表
         </a-menu-item>
       </a-sub-menu>
       <a-sub-menu key="sub3">

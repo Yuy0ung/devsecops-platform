@@ -4,6 +4,7 @@ import (
 	"demo/db/mysqldb"
 	"demo/db/redisdb"
 	"demo/log"
+	"demo/sast"
 	"demo/target"
 	"demo/task"
 	"demo/user"
@@ -19,6 +20,7 @@ func main() {
 	mysqldb.DB = mysqldb.DB.Debug()
 	task.Init()
 	target.Init()
+	sast.Init()
 
 	router := gin.Default()
 
@@ -69,6 +71,17 @@ func main() {
 				targets.POST("/delete", target.Delete())
 				targets.GET("/result", target.Result())
 			}
+		}
+
+		// SAST 模块
+		sastGroup := v1.Group("/sast")
+		{
+			sastGroup.POST("/codeql/create", sast.Create())
+			sastGroup.POST("/codeql/upload", sast.Upload())
+			sastGroup.GET("/vuln/list", sast.List())
+			sastGroup.GET("/vuln/result/:id", sast.Result())
+			sastGroup.POST("/vuln/delete/:id", sast.Delete())
+			sastGroup.GET("/file/:id", sast.GetFileContent())
 		}
 
 		// 日志管理
