@@ -44,30 +44,30 @@ IP+测活+端口扫描+POC检测
 * Yuy0ung
 * Yuy0ung@test123
 
-![QQ_1768814244012](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768814244012.png)
+![QQ_1768814244012](./images/QQ_1768814244012.png)
 
 ### DAST模块
 
 任务列表：
 
-![QQ_1768813028418](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768813028418.png)
+![QQ_1768813028418](./images/QQ_1768813028418.png)
 
 扫描结果：
 
-![baaba6738c60fd8e5c242d603cf73c65](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/baaba6738c60fd8e5c242d603cf73c65.png)
+![baaba6738c60fd8e5c242d603cf73c65](./images/baaba6738c60fd8e5c242d603cf73c65.png)
 
 ### SAST模块
 
 扫描选项配置：
-![QQ_1768812881808](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768812881808.png)
+![QQ_1768812881808](./images/QQ_1768812881808.png)
 
 任务列表：
 
-![QQ_1768812840452](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768812840452.png)
+![QQ_1768812840452](./images/QQ_1768812840452.png)
 
 扫描结果+代码预览+污点追踪：
 
-![QQ_1768812803040](https://yuy0ung.oss-cn-chengdu.aliyuncs.com/QQ_1768812803040.png)
+![QQ_1768812803040](./images/QQ_1768812803040.png)
 
 ### SCA模块
 
