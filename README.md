@@ -69,6 +69,17 @@ IP+测活+端口扫描+POC检测
 
 ![QQ_1768812803040](./images/QQ_1768812803040.png)
 
+#### AI审计功能
+
+扫描时可以选择开启AI审核功能：
+![abf36987371830e3f805b79bb43085ca](./images/4e2deb9750e3724417bc9a8a46fe149f.png)
+
+开启后AI会自动对扫描出的漏洞进行复核，可能会明显增加耗时
+
+AI审计会自动标记误报，降低误报率：
+
+![abf36987371830e3f805b79bb43085ca](./images/abf36987371830e3f805b79bb43085ca.png)
+
 ### SCA模块
 
 开发中......
@@ -94,13 +105,19 @@ sudo apt install redis-server -y
 go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 
 go mod tidy
+
+#配置AI的API KEY
+export LLM_API_KEY="模型API key"
+export LLM_API_URL="模型调用API URL"
+export LLM_MODEL="模型名称" 
+
 export CGO_ENABLED=1 CC=gcc 
 export CGO_CFLAGS="-I/usr/include/pcap" 
 export CGO_LDFLAGS="-lpcap" 
 go run main.go
 ~~~
 
-Nginx配置：
+前端/Nginx配置：
 
 ~~~sh
 vim /etc/nginx/sites-available/spa

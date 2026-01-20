@@ -44,15 +44,16 @@ type TaskLog struct {
 }
 
 type SastTask struct {
-	ID        string    `gorm:"primaryKey;size:64" json:"id"`
-	Type      string    `gorm:"size:32;not null" json:"type"` // "Git" or "Upload"
-	Target    string    `gorm:"size:512;not null" json:"target"`
-	Branch    string    `gorm:"size:128" json:"branch,omitempty"`
-	Status    string    `gorm:"size:32;not null" json:"status"` // pending, running, completed, failed
-	Rules     string    `gorm:"type:json" json:"rules"`         // Selected CWEs
-	Result    string    `gorm:"type:text" json:"result,omitempty"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"startTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	ID            string    `gorm:"primaryKey;size:64" json:"id"`
+	Type          string    `gorm:"size:32;not null" json:"type"` // "Git" or "Upload"
+	Target        string    `gorm:"size:512;not null" json:"target"`
+	Branch        string    `gorm:"size:128" json:"branch,omitempty"`
+	Status        string    `gorm:"size:32;not null" json:"status"` // pending, running, completed, failed
+	Rules         string    `gorm:"type:json" json:"rules"`         // Selected CWEs
+	Result        string    `gorm:"type:text" json:"result,omitempty"`
+	EnableAIAudit bool      `gorm:"default:false" json:"enableAiAudit"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"startTime"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 type SastFinding struct {
@@ -65,4 +66,5 @@ type SastFinding struct {
 	Line        int    `gorm:"default:0" json:"line"`
 	Message     string `gorm:"type:text" json:"message"`
 	CodeFlow    string `gorm:"type:json" json:"codeFlow,omitempty"`
+	AIAnalysis  string `gorm:"type:text" json:"aiAnalysis,omitempty"`
 }

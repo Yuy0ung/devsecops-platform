@@ -21,9 +21,10 @@ func Init() {
 }
 
 type CreateTaskRequest struct {
-	RepoUrl string   `json:"repoUrl"`
-	Branch  string   `json:"branch"`
-	Rules   []string `json:"rules"`
+	RepoUrl       string   `json:"repoUrl"`
+	Branch        string   `json:"branch"`
+	Rules         []string `json:"rules"`
+	EnableAiAudit bool     `json:"enableAiAudit"`
 }
 
 func Create() gin.HandlerFunc {
@@ -39,12 +40,13 @@ func Create() gin.HandlerFunc {
 		rulesJson := string(rulesBytes)
 
 		task := models.SastTask{
-			ID:     taskId,
-			Type:   "Git",
-			Target: req.RepoUrl,
-			Branch: req.Branch,
-			Status: "pending",
-			Rules:  rulesJson,
+			ID:            taskId,
+			Type:          "Git",
+			Target:        req.RepoUrl,
+			Branch:        req.Branch,
+			Status:        "pending",
+			Rules:         rulesJson,
+			EnableAIAudit: req.EnableAiAudit,
 		}
 
 		if err := mysqldb.DB.Create(&task).Error; err != nil {

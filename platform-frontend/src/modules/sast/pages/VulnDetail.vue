@@ -73,6 +73,35 @@
           <div v-else class="code-error">无法加载代码预览。</div>
         </div>
 
+        <!-- AI Analysis Panel -->
+        <div class="taint-flow-panel" v-if="selectedVuln.aiAnalysis">
+          <div
+            class="taint-header"
+            style="background-color: #f0f5ff; color: #2f54eb"
+          >
+            <robot-outlined /> AI Analysis Logic
+          </div>
+          <div
+            class="code-container"
+            style="
+              padding: 12px;
+              background: #fafafa;
+              border-bottom: 1px solid #f0f0f0;
+              max-height: 300px;
+              overflow-y: auto;
+            "
+          >
+            <pre
+              style="
+                white-space: pre-wrap;
+                font-family: monospace;
+                font-size: 12px;
+              "
+              >{{ selectedVuln.aiAnalysis }}</pre
+            >
+          </div>
+        </div>
+
         <!-- Taint Flow Analysis (Bottom) -->
         <div class="taint-flow-panel" v-if="selectedVuln.codeFlow">
           <div class="taint-header">污点追踪分析</div>
@@ -103,7 +132,11 @@ import { defineComponent, ref, onMounted, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import request from "@/utils/request";
 import { message } from "ant-design-vue";
-import { FileTextOutlined, ArrowLeftOutlined } from "@ant-design/icons-vue";
+import {
+  FileTextOutlined,
+  ArrowLeftOutlined,
+  RobotOutlined,
+} from "@ant-design/icons-vue";
 import hljs from "highlight.js/lib/core";
 import java from "highlight.js/lib/languages/java";
 import "highlight.js/styles/github.css"; // Or any style you prefer
@@ -118,6 +151,7 @@ interface Vulnerability {
   file: string;
   line: number;
   codeFlow?: string;
+  aiAnalysis?: string;
 }
 
 interface CodeFlowLocation {

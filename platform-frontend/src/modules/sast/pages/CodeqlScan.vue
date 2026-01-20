@@ -31,6 +31,12 @@
                 </a-row>
               </a-checkbox-group>
             </a-form-item>
+            <a-form-item
+              label="Enable AI Audit"
+              tooltip="Use AI to reduce false positives by analyzing code context"
+            >
+              <a-switch v-model:checked="gitForm.enableAiAudit" />
+            </a-form-item>
             <a-form-item>
               <a-button type="primary" :loading="loading" @click="handleGitScan"
                 >Start Scan</a-button
@@ -108,6 +114,7 @@ export default defineComponent({
       repoUrl: "",
       branch: "main",
       rules: [] as string[],
+      enableAiAudit: false,
     });
 
     const fileList = ref<UploadProps["fileList"]>([]);

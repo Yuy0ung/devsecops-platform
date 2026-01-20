@@ -232,6 +232,10 @@ func processTask(task models.SastTask) {
 					Message:     res.Message.Text,
 					CodeFlow:    string(codeFlowJson),
 				}
+
+				// AI Audit Integration
+				performAIAudit(task, workDir, res.RuleID, codeFlows, &finding)
+
 				mysqldb.DB.Create(&finding)
 				count++
 			}
