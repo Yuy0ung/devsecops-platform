@@ -2,6 +2,7 @@ package sast
 
 import (
 	"demo/db/mysqldb"
+	"demo/db/redisdb"
 	"demo/models"
 	"encoding/json"
 	"net/http"
@@ -51,8 +52,11 @@ func Create() gin.HandlerFunc {
 			return
 		}
 
-		// Push to channel for processing
-		TaskChannel <- task
+		// Push to Redis queue
+		if err := redisdb.Client.LPush(redisdb.Ctx, "sast_task_queue", taskId).Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enqueue task"})
+			return
+		}
 
 		c.JSON(http.StatusOK, gin.H{"taskId": taskId, "message": "Task created successfully"})
 	}
@@ -88,9 +92,11 @@ func Upload() gin.HandlerFunc {
 			return
 		}
 
-		// For upload tasks, we store the local path in Result temporarily or just rely on ID
-		// Actually, let's just pass the task to worker, worker knows where to find the file based on ID
-		TaskChannel <- task
+		// Push to Redis queue
+		if err := redisdb.Client.LPush(redisdb.Ctx, "sast_task_queue", taskId).Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enqueue task"})
+			return
+		}
 
 		c.JSON(http.StatusOK, gin.H{"taskId": taskId, "message": "File uploaded and task created"})
 	}

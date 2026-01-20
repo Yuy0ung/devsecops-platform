@@ -2,6 +2,7 @@ package sast
 
 import (
 	"demo/db/mysqldb"
+	"demo/db/redisdb"
 	"demo/models"
 	"encoding/json"
 	"fmt"
@@ -9,9 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
-
-var TaskChannel = make(chan models.SastTask, 100)
 
 type SarifReport struct {
 	Runs []struct {
@@ -60,7 +60,27 @@ type CodeFlowLocation struct {
 }
 
 func Worker() {
-	for task := range TaskChannel {
+	log.Println("SAST Worker started, waiting for tasks...")
+	for {
+		// Block until a task is available in Redis
+		// "sast_task_queue"
+		result, err := redisdb.Client.BRPop(redisdb.Ctx, 0, "sast_task_queue").Result()
+		if err != nil {
+			log.Printf("Redis BRPop failed: %v", err)
+			time.Sleep(5 * time.Second) // Retry delay
+			continue
+		}
+		taskId := result[1]
+
+		log.Printf("Processing task: %s", taskId)
+
+		// Fetch task from DB
+		var task models.SastTask
+		if err := mysqldb.DB.Where("id = ?", taskId).First(&task).Error; err != nil {
+			log.Printf("Task %s not found in DB: %v", taskId, err)
+			continue
+		}
+
 		processTask(task)
 	}
 }
@@ -75,7 +95,6 @@ func processTask(task models.SastTask) {
 	// defer os.RemoveAll(workDir) // Cleanup disabled for code preview
 
 	var dbPath string
-	var err error
 
 	if task.Type == "Git" {
 		// Clone repo
@@ -89,15 +108,6 @@ func processTask(task models.SastTask) {
 
 		// Build DB
 		dbPath = filepath.Join(workDir, "db")
-		// codeql database create <db> --language=java --command="mvn clean install -Dmaven.test.skip=true" --source-root=<src>
-		// Note: User said "prioritize java8". We assume 'mvn' is available and configured.
-		// If explicit java version is needed, we might need to set JAVA_HOME.
-		// For now, use default environment.
-
-		// Note: "mvn clean install" might take long and fail if dependencies are missing.
-		// Sometimes just --language=java without command works if it's simple, but for Java it usually needs build.
-		// User specific command: --command="mvn clean install -Dmaven.test.skip=true"
-
 		cmd = exec.Command("codeql", "database", "create", dbPath,
 			"--language=java",
 			"--command=mvn clean install -Dmaven.test.skip=true",
@@ -112,9 +122,6 @@ func processTask(task models.SastTask) {
 	} else {
 		// Upload mode
 		zipPath := filepath.Join("uploads", task.ID+".zip")
-		// Unzip
-		// Assuming 'unzip' command exists or use archive/zip
-		// Using exec for simplicity
 		cmd := exec.Command("unzip", "-q", zipPath, "-d", workDir)
 		if err := cmd.Run(); err != nil {
 			log.Printf("Unzip failed: %s", err)
@@ -122,8 +129,6 @@ func processTask(task models.SastTask) {
 			return
 		}
 
-		// Find the database directory. It might be nested.
-		// CodeQL DB usually has a 'codeql-database.yml' file.
 		foundDB := false
 		filepath.Walk(workDir, func(path string, info os.FileInfo, err error) error {
 			if !info.IsDir() && info.Name() == "codeql-database.yml" {
@@ -140,22 +145,10 @@ func processTask(task models.SastTask) {
 		}
 	}
 
-	// Analyze
-	// codeql database analyze <db> codeql/java-queries:Security/CWE/CWE-089 --format=sarif-latest --output=sql.sarif
-	// We need to construct the queries based on selected rules.
-	// User rules: CWE-078, CWE-502, etc.
-	// Map rules to CodeQL queries.
-	// Example: CWE-089 -> codeql/java-queries:Security/CWE/CWE-089
-	// But actually, 'codeql/java-queries:Security/CWE/CWE-089' might be a suite or path.
-	// If the user has the standard codeql-repo checked out or installed.
-	// Assuming `codeql/java-queries` is available.
-	// If we want to use the standard suites, we might pass multiple queries.
-
 	// Parse rules from task.Rules (JSON string)
 	var rules []string
 	if err := json.Unmarshal([]byte(task.Rules), &rules); err != nil {
 		log.Printf("Failed to parse rules: %v", err)
-		// Fallback if parsing fails or empty
 		rules = []string{}
 	}
 
@@ -164,85 +157,90 @@ func processTask(task models.SastTask) {
 		if rule == "" {
 			continue
 		}
-		// Construct query path
 		// E.g. CWE-089 -> codeql/java-queries:Security/CWE/CWE-089
 		queries = append(queries, fmt.Sprintf("codeql/java-queries:Security/CWE/%s", rule))
 	}
 
-	// If no rules selected, maybe run default?
 	if len(queries) == 0 {
 		queries = append(queries, "codeql/java-queries:Security/CWE/") // Fallback
 	}
 
 	sarifFile := filepath.Join(workDir, "results.sarif")
-	args := []string{"database", "analyze", dbPath}
-	args = append(args, queries...)
-	args = append(args, "--format=sarif-latest", "--output="+sarifFile)
+	totalCount := 0
 
-	// Ensure we use enough threads/RAM if needed
-	// args = append(args, "--threads=4", "--ram=4096")
+	// Sequential Scan Loop to save memory
+	for _, query := range queries {
+		// Clean up previous sarif file
+		os.Remove(sarifFile)
 
-	cmd := exec.Command("codeql", args...)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("CodeQL analyze failed: %s, output: %s", err, output)
-		failTask(task, "CodeQL analysis failed: "+string(output))
-		return
-	}
+		log.Printf("Running CodeQL analysis for query: %s", query)
+		args := []string{"database", "analyze", dbPath, query}
+		args = append(args, "--format=sarif-latest", "--output="+sarifFile)
+		// args = append(args, "--threads=4", "--ram=4096")
 
-	// Parse SARIF
-	sarifContent, err := os.ReadFile(sarifFile)
-	if err != nil {
-		failTask(task, "Failed to read SARIF output")
-		return
-	}
-
-	var report SarifReport
-	if err := json.Unmarshal(sarifContent, &report); err != nil {
-		failTask(task, "Failed to parse SARIF output")
-		return
-	}
-
-	// Save findings
-	count := 0
-	for _, run := range report.Runs {
-		for _, res := range run.Results {
-			file := ""
-			line := 0
-			if len(res.Locations) > 0 {
-				file = res.Locations[0].PhysicalLocation.ArtifactLocation.URI
-				line = res.Locations[0].PhysicalLocation.Region.StartLine
-			}
-
-			// Extract code flow
-			var codeFlows []CodeFlowLocation
-			if len(res.CodeFlows) > 0 && len(res.CodeFlows[0].ThreadFlows) > 0 {
-				for _, loc := range res.CodeFlows[0].ThreadFlows[0].Locations {
-					codeFlows = append(codeFlows, CodeFlowLocation{
-						File:    loc.Location.PhysicalLocation.ArtifactLocation.URI,
-						Line:    loc.Location.PhysicalLocation.Region.StartLine,
-						Message: loc.Location.Message.Text,
-					})
-				}
-			}
-			codeFlowJson, _ := json.Marshal(codeFlows)
-
-			finding := models.SastFinding{
-				TaskID:      task.ID,
-				RuleID:      res.RuleID,
-				Description: res.Message.Text, // Simplified
-				Severity:    "High",           // CodeQL SARIF might have level in 'level' or 'properties'
-				File:        file,
-				Line:        line,
-				Message:     res.Message.Text,
-				CodeFlow:    string(codeFlowJson),
-			}
-			mysqldb.DB.Create(&finding)
-			count++
+		cmd := exec.Command("codeql", args...)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			log.Printf("CodeQL analyze failed for query %s: %s, output: %s", query, err, output)
+			// Continue to next query instead of failing completely
+			continue
 		}
+
+		// Parse SARIF
+		sarifContent, err := os.ReadFile(sarifFile)
+		if err != nil {
+			log.Printf("Failed to read SARIF output for query %s: %v", query, err)
+			continue
+		}
+
+		var report SarifReport
+		if err := json.Unmarshal(sarifContent, &report); err != nil {
+			log.Printf("Failed to parse SARIF output for query %s: %v", query, err)
+			continue
+		}
+
+		// Save findings
+		count := 0
+		for _, run := range report.Runs {
+			for _, res := range run.Results {
+				file := ""
+				line := 0
+				if len(res.Locations) > 0 {
+					file = res.Locations[0].PhysicalLocation.ArtifactLocation.URI
+					line = res.Locations[0].PhysicalLocation.Region.StartLine
+				}
+
+				// Extract code flow
+				var codeFlows []CodeFlowLocation
+				if len(res.CodeFlows) > 0 && len(res.CodeFlows[0].ThreadFlows) > 0 {
+					for _, loc := range res.CodeFlows[0].ThreadFlows[0].Locations {
+						codeFlows = append(codeFlows, CodeFlowLocation{
+							File:    loc.Location.PhysicalLocation.ArtifactLocation.URI,
+							Line:    loc.Location.PhysicalLocation.Region.StartLine,
+							Message: loc.Location.Message.Text,
+						})
+					}
+				}
+				codeFlowJson, _ := json.Marshal(codeFlows)
+
+				finding := models.SastFinding{
+					TaskID:      task.ID,
+					RuleID:      res.RuleID,
+					Description: res.Message.Text,
+					Severity:    "High",
+					File:        file,
+					Line:        line,
+					Message:     res.Message.Text,
+					CodeFlow:    string(codeFlowJson),
+				}
+				mysqldb.DB.Create(&finding)
+				count++
+			}
+		}
+		totalCount += count
 	}
 
 	task.Status = "completed"
-	task.Result = fmt.Sprintf("Found %d vulnerabilities", count)
+	task.Result = fmt.Sprintf("Found %d vulnerabilities", totalCount)
 	mysqldb.DB.Save(&task)
 }
 
