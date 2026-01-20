@@ -161,3 +161,31 @@ mysql：
 
 redis：
 自行在main.go中设置密码
+
+~~~
+我发现了大量的分析说明上下文不足，我的本意是这些变量流经的函数方法内容都应该被提取，比如对于变量a有方法this_is_func_a(x)，那就应该将func a(){.....}的内容一并给到AI，但似乎并没有实现：
+
+1. 代码中出现了 `checkUserInput.checkSqlBlackList(...)` 调用，看似是一个黑名单校验函数。
+2. 但仅依据函数名无法确认其内部实现，且黑名单机制本身对 SQL 注入防御能力有限（容易绕过），缺乏上下文实现细节。
+3. 因此无法确认该函数能有效防御当前 SQL 注入攻击向量，属于“缺失函数实现上下文”情况。') RETURNING `id`
+   2026/01/20 15:24:47 Starting AI audit for finding: java/sql-injection
+
+1. 在代码第587行调用了 checkUserInput.checkUser(id) 对 id 进行校验，并在第588行根据返回的 message 决定是否终止执行。
+2. 然而，checkUserInput.checkUser 的具体实现未给出，无法确认其是否对 SQL 注入攻击向量（如引号、注释符、联合查询等）进行了有效过滤或白名单校验。
+3. 由于缺失函数实现上下文，无法验证其能否防御 java/sql-injection 漏洞。
+
+1. 在 `special1OrderBy` 方法的 `writeList` 分支中，调用了 `checkUserInput.checkSqlWhiteList(field)` 对 `field` 参数进行白名单校验。
+2. 该函数名明确暗示了对 SQL 相关输入的白名单校验，且注释也指出“通常防御 order by 注入需要使用白名单的方式”，符合针对 ORDER BY 注入的防护意图。
+3. 虽然无法看到 `checkSqlWhiteList` 的具体实现，但其命名、上下文用途及注释均表明这是一个用于防御 SQL 注入（特别是 ORDER BY 场景）的白名单校验函数，且被实际调用，应视为有效净化/校验机制。'
+
+1. 在 `special2Like` 方法中，当 `type="raw"` 时，直接将 `keyword` 拼接到 SQL 语句中，未使用任何净化、校验或白名单函数。
+2. 未发现任何针对 `keyword` 参数的净化、校验或白名单函数。
+3. 因此判定为真阳性。') RETURNING `id`
+   2026/01/20 15:25:31 Starting AI audit for finding: java/sql-injection
+   
+1. 在代码中发现了 `isTrustedScript(payload, trustedScripts)` 函数调用，该函数用于校验用户输入的 payload 是否在预定义的可信脚本列表中。
+2. 该函数通过白名单方式限制用户输入，仅允许执行预定义的安全脚本（如 `"id".execute()`、`"ls".execute()`、`"whoami".execute()`），从而防止任意 Groovy 脚本执行。
+3. 虽然未看到 `isTrustedScript` 的具体实现，但从逻辑上看，这是一个典型的白名单校验机制，且调用方式合理，能够有效防御 Groovy 注入攻击。
+4. 因此，该漏洞为误报。') RETURNING `id`
+~~~
+

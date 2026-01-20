@@ -46,6 +46,7 @@ func performAIAudit(task models.SastTask, workDir string, ruleID string, codeFlo
 	auditState := &aiaudit.AuditState{
 		VulnerabilityID: ruleID, // simplified
 		RuleID:          ruleID,
+		VulnDescription: finding.Description,
 		CodeFlows:       auditFlows,
 	}
 
@@ -62,6 +63,8 @@ func performAIAudit(task models.SastTask, workDir string, ruleID string, codeFlo
 	if auditState.IsFalsePositive {
 		finding.Severity = "Info" // Downgrade severity
 		finding.Description = "[AI: Suspected False Positive] " + finding.Description + "\nReason: " + auditState.Reason
+		// Also update Message as some frontend views might use it
+		finding.Message = finding.Description
 	} else {
 		// For verified true positives, we don't change the description significantly, or maybe just append a confirmation
 		// finding.Description = finding.Description + "\n[AI: Verified]"

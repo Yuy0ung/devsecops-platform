@@ -522,7 +522,7 @@ export default defineComponent({
 }
 
 .taint-flow-panel {
-  height: 167px;
+  max-height: 120px;
   border-top: 1px solid #e8e8e8;
   display: flex;
   flex-direction: column;

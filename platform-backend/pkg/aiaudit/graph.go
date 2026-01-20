@@ -3,6 +3,8 @@ package aiaudit
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -10,6 +12,7 @@ import (
 type AuditState struct {
 	VulnerabilityID string
 	RuleID          string
+	VulnDescription string         // Added basic description
 	CodeFlows       []CodeLocation // Extracted from SARIF
 	Context         []string       // Extracted code snippets (function bodies)
 	IsFalsePositive bool
@@ -43,6 +46,12 @@ func RunAuditPipeline(ctx context.Context, state *AuditState) error {
 func buildContext(state *AuditState) error {
 	var contexts []string
 	seenFunctions := make(map[string]bool)
+	var projectRoot string
+
+	// Determine project root from the first file path
+	if len(state.CodeFlows) > 0 {
+		projectRoot = findProjectRoot(state.CodeFlows[0].FilePath)
+	}
 
 	for i, loc := range state.CodeFlows {
 		// Use our extractor to get the full function body
@@ -62,9 +71,46 @@ func buildContext(state *AuditState) error {
 		seenFunctions[code] = true
 
 		contexts = append(contexts, fmt.Sprintf("Step %d (%s:%d):\n%s", i+1, loc.FilePath, loc.Line, code))
+
+		// Enrich context with definitions of called functions
+		if strings.HasSuffix(loc.FilePath, ".java") && projectRoot != "" {
+			defs, _ := ExtractCalledFunctions(code, projectRoot, ".java")
+			for _, def := range defs {
+				// def is "Definition of X:\nBody..."
+				// We check if the Body part is already seen?
+				// The def string includes a header.
+				// Let's just check the whole string or extract body.
+				// For simplicity, check the whole string.
+				if !seenFunctions[def] {
+					seenFunctions[def] = true
+					contexts = append(contexts, fmt.Sprintf("Supplementary Context:\n%s", def))
+				}
+			}
+		}
 	}
+
 	state.Context = contexts
 	return nil
+}
+
+func findProjectRoot(startPath string) string {
+	dir := filepath.Dir(startPath)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+			return dir
+		}
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		if _, err := os.Stat(filepath.Join(dir, "pom.xml")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir || parent == "." || parent == "/" {
+			return filepath.Dir(startPath) // Fallback
+		}
+		dir = parent
+	}
 }
 
 // Node 2: SecurityAuditor
@@ -75,23 +121,45 @@ func runSecurityAuditor(ctx context.Context, state *AuditState) error {
 	}
 
 	// Construct the prompt
-	prompt := fmt.Sprintf(`You are a senior application security expert.
-Analyze the following code execution path for a potential %s vulnerability.
-The path consists of sequential function calls where data flows from source to sink.
+	prompt := fmt.Sprintf(`你现在的目标是**仅识别误报(False Positive)**。
+分析代码路径，寻找是否存在**净化函数(Sanitizer)**、**校验函数(Validator)**或**白名单(Allowlist)**。
 
-Code Context:
+漏洞描述：
 %s
 
-Task:
-Determine if there is a sanitizer, validator, or logic check that effectively prevents the vulnerability.
-If yes, mark as FALSE POSITIVE.
-If no, or if you are unsure, mark as TRUE POSITIVE.
+规则：
+1. **重点关注**代码中标注了 "<-- 关注这里 (Focus Here)" 的行。这些是污点数据流经过的关键步骤（如 Source、Sink 或中间传递点）。
+2. 如果代码中包含多个逻辑分支（如 switch/if），**仅分析**数据流实际经过的路径。
+   - 上下文中的 "Step X" 会告诉你数据流在第几行。请核对行号。
+   - 不要被其他未执行的分支代码（如 switch 中的其他 case）干扰。
+   - 如果漏洞发生在 case "raw"，而 case "writeList" 中有白名单，这**不能**证明 case "raw" 是安全的。
 
-Response Format:
-[THINKING]: <Step-by-step reasoning, explaining which functions were analyzed and why they are safe/unsafe>
+3. 如果代码中**没有发现**任何疑似的净化、校验或白名单函数：
+   - **不要**分析漏洞原理。
+   - **不要**浪费时间解释为什么是漏洞。
+   - 直接判定为 **TRUE POSITIVE**。
+   - [THINKING] 填写：未在上下文中发现净化或校验函数。
+
+4. 仅当**发现**了疑似净化/校验函数时：
+   - 深入分析该函数是否能有效防御 %s 漏洞。
+   - 必须确认该函数是否针对**该漏洞的特定攻击向量**有效（例如：SQL注入是否防御了IN子句注入？路径遍历是否防御了..跳转？）。
+   - 如果函数名暗示安全（如 checkWhiteList）但**看不到具体实现**，且无标准库文档支持，应保持怀疑，判定为 **TRUE POSITIVE**，并在理由中说明“缺失函数实现上下文”。
+   - 如果有效，判定为 **FALSE POSITIVE**。
+   - 如果无效，判定为 **TRUE POSITIVE**。
+
+代码上下文：
+%s
+
+请严格使用以下格式回复（参考示例）：
+[THINKING]: 
+1. 漏洞发生在 Step 3 (行号 45)，位于 switch 的 case "raw" 分支中。
+2. 虽然同函数内的 case "safe" 分支有过滤逻辑，但数据流并未经过该分支。
+3. 在 case "raw" 分支中，输入变量直接拼接到了 SQL 语句中，且未发现任何净化函数。
+4. 因此判定为真阳性。
+
 [VERDICT]: FALSE POSITIVE / TRUE POSITIVE
-[REASON]: <One sentence explanation for the UI>
-`, state.RuleID, strings.Join(state.Context, "\n\n---\n\n"))
+[REASON]: <一句话中文解释原因，引用具体的函数或变量名>
+`, state.VulnDescription, state.RuleID, strings.Join(state.Context, "\n\n---\n\n"))
 
 	// Call LLM (Real or Mock based on Env)
 	llmResponse, err := callLLM(ctx, prompt)
@@ -103,11 +171,21 @@ Response Format:
 	state.Thinking = parseSection(llmResponse, "[THINKING]:")
 	state.Reason = parseSection(llmResponse, "[REASON]:")
 
-	if strings.Contains(llmResponse, "[VERDICT]: FALSE POSITIVE") {
+	// Robust Verdict Parsing:
+	// 1. Check for specific "FALSE POSITIVE" string (case insensitive)
+	// 2. Be tolerant of whitespace and punctuation
+	upperResponse := strings.ToUpper(llmResponse)
+	// Normalize whitespace to single spaces to handle [VERDICT]:  FALSE POSITIVE
+	normalized := strings.Join(strings.Fields(upperResponse), " ")
+
+	if strings.Contains(normalized, "[VERDICT]: FALSE POSITIVE") {
 		state.IsFalsePositive = true
 	} else {
 		state.IsFalsePositive = false
 	}
+
+	// Log for debugging
+	fmt.Printf("AI Audit Result for %s:\nVerdict: %v\nThinking: %s\n", state.RuleID, state.IsFalsePositive, state.Thinking)
 
 	return nil
 }
