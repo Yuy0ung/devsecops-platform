@@ -224,6 +224,8 @@ export default defineComponent({
           return "orange";
         case "low":
           return "blue";
+        case "误报":
+          return "green";
         default:
           return "default";
       }

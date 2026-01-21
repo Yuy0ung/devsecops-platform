@@ -51,12 +51,6 @@
             >
           </div>
           <div style="margin-bottom: 16px; text-align: right">
-            <a-button
-              type="primary"
-              @click="showUploadModal"
-              style="margin-right: 8px"
-              >上传扫描</a-button
-            >
             <a-button type="primary" @click="loadFindings" :loading="loading"
               >刷新列表</a-button
             >
@@ -141,36 +135,6 @@
         </a-col>
       </a-row>
     </a-card>
-
-    <a-modal
-      v-model:visible="uploadVisible"
-      title="上传 CodeQL 数据库扫描"
-      @ok="handleUpload"
-      :confirmLoading="uploadLoading"
-    >
-      <a-form layout="vertical">
-        <a-form-item label="选择语言">
-          <a-select v-model:value="uploadForm.language">
-            <a-select-option value="java">Java</a-select-option>
-            <a-select-option value="go">Go</a-select-option>
-            <a-select-option value="python">Python</a-select-option>
-            <a-select-option value="javascript">JavaScript</a-select-option>
-            <a-select-option value="cpp">C/C++</a-select-option>
-            <a-select-option value="csharp">C#</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="数据库压缩包 (.zip)">
-          <a-upload
-            :before-upload="beforeUpload"
-            :file-list="fileList"
-            :max-count="1"
-            @remove="handleRemove"
-          >
-            <a-button> <upload-outlined /> 选择文件 </a-button>
-          </a-upload>
-        </a-form-item>
-      </a-form>
-    </a-modal>
   </div>
 </template>
 
@@ -186,7 +150,6 @@ import {
 import { useRoute, useRouter } from "vue-router";
 import request from "@/utils/request";
 import { message } from "ant-design-vue";
-import { UploadOutlined } from "@ant-design/icons-vue";
 
 interface Finding {
   id: number;
@@ -206,7 +169,7 @@ interface CodeFlowStep {
 
 export default defineComponent({
   components: {
-    UploadOutlined,
+    // UploadOutlined,
   },
   setup() {
     const route = useRoute();
@@ -220,13 +183,15 @@ export default defineComponent({
     const codeContent = ref("");
     const codeLoading = ref(false);
 
-    // Upload related
+    // Upload related removed
+    /*
     const uploadVisible = ref(false);
     const uploadLoading = ref(false);
     const uploadForm = reactive({
       language: "java",
     });
     const fileList = ref<any[]>([]);
+    */
 
     // Task polling & cancellation
     const currentTaskId = ref("");
@@ -239,6 +204,7 @@ export default defineComponent({
       pageSize: 10,
     };
 
+    /*
     const showUploadModal = () => {
       uploadVisible.value = true;
     };
@@ -283,6 +249,7 @@ export default defineComponent({
         uploadLoading.value = false;
       }
     };
+    */
 
     const startPolling = () => {
       if (pollTimer) clearInterval(pollTimer);
@@ -355,6 +322,8 @@ export default defineComponent({
           return "red";
         case "warning":
           return "orange";
+        case "误报": // False Positive
+          return "green";
         default:
           return "blue";
       }
@@ -493,6 +462,7 @@ export default defineComponent({
       pagination,
       loadFindings,
       // Upload & Task Control
+      /*
       showUploadModal,
       handleUpload,
       uploadVisible,
@@ -501,6 +471,7 @@ export default defineComponent({
       fileList,
       beforeUpload,
       handleRemove,
+      */
       currentTaskId,
       taskStatus,
       cancelTask,

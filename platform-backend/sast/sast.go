@@ -64,45 +64,7 @@ func Create() gin.HandlerFunc {
 	}
 }
 
-func Upload() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		file, err := c.FormFile("file")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
-			return
-		}
-
-		// Save uploaded file
-		taskId := uuid.New().String()
-		uploadPath := filepath.Join("uploads", taskId+".zip")
-		// Ensure uploads directory exists (in main or init)
-		if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
-			return
-		}
-
-		task := models.SastTask{
-			ID:     taskId,
-			Type:   "Upload",
-			Target: file.Filename,
-			Status: "pending",
-			Rules:  "[]", // Default rules or passed via form
-		}
-
-		if err := mysqldb.DB.Create(&task).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
-			return
-		}
-
-		// Push to Redis queue
-		if err := redisdb.Client.LPush(redisdb.Ctx, "sast_task_queue", taskId).Err(); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enqueue task"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"taskId": taskId, "message": "File uploaded and task created"})
-	}
-}
+// Upload handler removed
 
 func List() gin.HandlerFunc {
 	return func(c *gin.Context) {

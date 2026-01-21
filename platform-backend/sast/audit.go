@@ -61,7 +61,7 @@ func performAIAudit(task models.SastTask, workDir string, ruleID string, codeFlo
 	finding.AIAnalysis = auditState.Thinking // Save the thinking process log
 
 	if auditState.IsFalsePositive {
-		finding.Severity = "Info" // Downgrade severity
+		finding.Severity = "误报" // Mark as False Positive
 		finding.Description = "[AI: Suspected False Positive] " + finding.Description + "\nReason: " + auditState.Reason
 		// Also update Message as some frontend views might use it
 		finding.Message = finding.Description

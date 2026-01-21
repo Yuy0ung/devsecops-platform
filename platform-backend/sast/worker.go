@@ -120,29 +120,9 @@ func processTask(task models.SastTask) {
 			return
 		}
 	} else {
-		// Upload mode
-		zipPath := filepath.Join("uploads", task.ID+".zip")
-		cmd := exec.Command("unzip", "-q", zipPath, "-d", workDir)
-		if err := cmd.Run(); err != nil {
-			log.Printf("Unzip failed: %s", err)
-			failTask(task, "Failed to unzip database")
-			return
-		}
-
-		foundDB := false
-		filepath.Walk(workDir, func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() && info.Name() == "codeql-database.yml" {
-				dbPath = filepath.Dir(path)
-				foundDB = true
-				return filepath.SkipDir
-			}
-			return nil
-		})
-
-		if !foundDB {
-			failTask(task, "Invalid CodeQL database structure")
-			return
-		}
+		// Upload mode removed
+		failTask(task, "Upload mode is no longer supported")
+		return
 	}
 
 	// Parse rules from task.Rules (JSON string)

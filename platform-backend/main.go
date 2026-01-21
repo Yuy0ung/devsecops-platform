@@ -77,7 +77,7 @@ func main() {
 		sastGroup := v1.Group("/sast")
 		{
 			sastGroup.POST("/codeql/create", sast.Create())
-			sastGroup.POST("/codeql/upload", sast.Upload())
+			// Upload functionality removed
 			sastGroup.GET("/vuln/list", sast.List())
 			sastGroup.GET("/vuln/result/:id", sast.Result())
 			sastGroup.POST("/vuln/delete/:id", sast.Delete())

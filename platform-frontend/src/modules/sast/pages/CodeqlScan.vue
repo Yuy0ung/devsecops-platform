@@ -44,39 +44,6 @@
             </a-form-item>
           </a-form>
         </a-tab-pane>
-
-        <a-tab-pane key="upload" tab="上传CodeQL数据库扫描">
-          <a-upload-dragger
-            v-model:fileList="fileList"
-            name="file"
-            :multiple="false"
-            accept=".zip"
-            :before-upload="beforeUpload"
-            @remove="handleRemove"
-          >
-            <p class="ant-upload-drag-icon">
-              <inbox-outlined />
-            </p>
-            <p class="ant-upload-text">
-              Click or drag file to this area to upload
-            </p>
-            <p class="ant-upload-hint">
-              Support for a single or bulk upload. Strictly prohibit from
-              uploading company data or other band files
-            </p>
-          </a-upload-dragger>
-          <div
-            style="margin-top: 16px; text-align: center"
-            v-if="fileList.length > 0"
-          >
-            <a-button
-              type="primary"
-              :loading="loading"
-              @click="handleUploadScan"
-              >Start Scan</a-button
-            >
-          </div>
-        </a-tab-pane>
       </a-tabs>
     </a-card>
   </div>
@@ -86,14 +53,14 @@
 import { defineComponent, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
-import { InboxOutlined } from "@ant-design/icons-vue";
+// import { InboxOutlined } from "@ant-design/icons-vue";
 import type { UploadProps } from "ant-design-vue";
 import request from "@/utils/request";
 
 export default defineComponent({
   name: "CodeqlScan",
   components: {
-    InboxOutlined,
+    // InboxOutlined,
   },
   setup() {
     const router = useRouter();
@@ -117,7 +84,7 @@ export default defineComponent({
       enableAiAudit: false,
     });
 
-    const fileList = ref<UploadProps["fileList"]>([]);
+    // const fileList = ref<UploadProps["fileList"]>([]);
 
     const handleGitScan = async () => {
       if (!gitForm.repoUrl) {
@@ -142,6 +109,7 @@ export default defineComponent({
       }
     };
 
+    /*
     const beforeUpload: UploadProps["beforeUpload"] = (file) => {
       fileList.value = [file];
       return false; // Prevent automatic upload
@@ -178,17 +146,18 @@ export default defineComponent({
         loading.value = false;
       }
     };
+    */
 
     return {
       activeTab,
       loading,
       gitForm,
       ruleOptions,
-      fileList,
+      // fileList,
       handleGitScan,
-      beforeUpload,
-      handleRemove,
-      handleUploadScan,
+      // beforeUpload,
+      // handleRemove,
+      // handleUploadScan,
     };
   },
 });
