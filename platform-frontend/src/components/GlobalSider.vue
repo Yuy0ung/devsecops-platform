@@ -60,7 +60,7 @@
           </template>
           项目列表
         </a-menu-item>
-        <a-menu-item key="scaVuln">
+        <a-menu-item key="scaVulnProjects">
           <template #icon>
             <ApartmentOutlined />
           </template>

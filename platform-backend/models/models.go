@@ -68,3 +68,32 @@ type SastFinding struct {
 	CodeFlow    string `gorm:"type:json" json:"codeFlow,omitempty"`
 	AIAnalysis  string `gorm:"type:text" json:"aiAnalysis,omitempty"`
 }
+
+type ScaTask struct {
+	ID              string    `gorm:"primaryKey;size:64" json:"id"`
+	Type            string    `gorm:"size:32;not null" json:"type"` // "Git" or "Upload"
+	Target          string    `gorm:"size:512;not null" json:"target"`
+	Branch          string    `gorm:"size:128" json:"branch,omitempty"`
+	Status          string    `gorm:"size:32;not null" json:"status"` // pending, running, completed, failed
+	Result          string    `gorm:"type:text" json:"result,omitempty"`
+	MaxSeverity     string    `gorm:"size:32" json:"maxSeverity"` // Critical, High, Medium, Low
+	VulnCount       int       `gorm:"default:0" json:"vulnCount"`
+	ProjectLanguage string    `gorm:"size:64" json:"projectLanguage"` // java, go, python, javascript, etc.
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"startTime"`
+	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+}
+
+type ScaFinding struct {
+	ID           uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
+	TaskID       string `gorm:"size:64;index" json:"taskId"`
+	PackageName  string `gorm:"size:255" json:"packageName"`
+	Version      string `gorm:"size:64" json:"version"`
+	Language     string `gorm:"size:32" json:"language"`
+	License      string `gorm:"size:128" json:"license"`
+	VulnID       string `gorm:"size:64" json:"vulnId"` // CVE-XXX or OSV ID
+	Severity     string `gorm:"size:32" json:"severity"`
+	Description  string `gorm:"type:text" json:"description"`
+	FixedVersion string `gorm:"size:64" json:"fixedVersion"`
+	Reference    string `gorm:"size:1024" json:"reference"`
+	FilePath     string `gorm:"size:512" json:"filePath"`
+}

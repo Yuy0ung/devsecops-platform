@@ -9,6 +9,10 @@ import CodeqlScan from "@/modules/sast/pages/CodeqlScan.vue";
 import VulnList from "@/modules/sast/pages/VulnList.vue";
 import VulnDetail from "@/modules/sast/pages/VulnDetail.vue";
 
+import ScaList from "@/modules/sca/pages/ScaList.vue";
+import ScaVuln from "@/modules/sca/pages/ScaVuln.vue";
+import ScaVulnProjects from "@/modules/sca/pages/ScaVulnProjects.vue";
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/login",
@@ -61,13 +65,19 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/sca/list",
     name: "scaList",
-    component: DesigningPage,
+    component: ScaList,
     meta: { requiresAuth: true },
   },
   {
     path: "/sca/vuln",
-    name: "scaVuln",
-    component: DesigningPage,
+    name: "scaVulnProjects",
+    component: ScaVulnProjects,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/sca/vuln/:id",
+    name: "scaVulnDetail",
+    component: ScaVuln,
     meta: { requiresAuth: true },
   },
 ];

@@ -5,6 +5,7 @@ import (
 	"demo/db/redisdb"
 	"demo/log"
 	"demo/sast"
+	"demo/sca"
 	"demo/target"
 	"demo/task"
 	"demo/user"
@@ -21,8 +22,11 @@ func main() {
 	task.Init()
 	target.Init()
 	sast.Init()
+	sca.Init()
 
 	router := gin.Default()
+	// Set a lower memory limit for multipart forms (default is 32 MiB)
+	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 
 	// CORS
 	router.Use(cors.New(cors.Config{
@@ -82,6 +86,19 @@ func main() {
 			sastGroup.GET("/vuln/result/:id", sast.Result())
 			sastGroup.POST("/vuln/delete/:id", sast.Delete())
 			sastGroup.GET("/file/:id", sast.GetFileContent())
+		}
+
+		// SCA 模块
+		scaGroup := v1.Group("/sca")
+		{
+			scaGroup.POST("/create", sca.Create())
+			// Chunked upload endpoints
+			scaGroup.POST("/upload/init", sca.InitUpload())
+			scaGroup.POST("/upload/chunk", sca.UploadChunk())
+			scaGroup.POST("/upload/merge", sca.MergeChunks())
+			scaGroup.GET("/list", sca.List())
+			scaGroup.GET("/vuln/result/:id", sca.Result())
+			scaGroup.POST("/vuln/delete/:id", sca.Delete())
 		}
 
 		// 日志管理
