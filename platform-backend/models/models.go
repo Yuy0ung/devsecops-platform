@@ -97,3 +97,16 @@ type ScaFinding struct {
 	Reference    string `gorm:"size:1024" json:"reference"`
 	FilePath     string `gorm:"size:512" json:"filePath"`
 }
+
+type LocalVuln struct {
+	ID              uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
+	VulnID          string `gorm:"size:64;index" json:"vulnId"`      // CVE-XXX or GHSA-XXX
+	PackageName     string `gorm:"size:255;index" json:"packageName"` // e.g. com.alibaba:fastjson
+	Ecosystem       string `gorm:"size:32" json:"ecosystem"`          // Maven, PyPI, Go, npm
+	Severity        string `gorm:"size:32" json:"severity"`           // Critical, High
+	AffectedVersion string `gorm:"size:128" json:"affectedVersion"`   // e.g. "< 1.2.83"
+	FixedVersion    string `gorm:"size:64" json:"fixedVersion"`
+	Summary         string `gorm:"size:512" json:"summary"`
+	Description     string `gorm:"type:text" json:"description"`
+	References      string `gorm:"type:text" json:"references"`
+}

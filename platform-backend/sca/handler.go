@@ -18,6 +18,8 @@ import (
 
 func Init() {
 	mysqldb.DB.AutoMigrate(&models.ScaTask{}, &models.ScaFinding{})
+	// Initialize local vulnerability database
+	InitLocalDB()
 	go Worker()
 }
 

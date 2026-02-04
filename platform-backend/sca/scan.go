@@ -46,8 +46,9 @@ func (e *ScaEngine) Scan(task *models.ScaTask) ([]models.ScaFinding, []string, e
 		languages = append(languages, lang)
 	}
 
-	// 2. Check Vulns (OSV)
-	vulnMap, err := CheckVulns(allDeps)
+	// 2. Check Vulns (Local DB)
+	// Replace OSV check with Local DB check to avoid alert storms and focus on high-severity issues.
+	vulnMap, err := CheckLocalVulns(allDeps)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -58,50 +59,22 @@ func (e *ScaEngine) Scan(task *models.ScaTask) ([]models.ScaFinding, []string, e
 		key := dep.Name + "@" + dep.Version
 		vulns, ok := vulnMap[key]
 		if !ok {
-			// fmt.Printf("[SCA] No vulns for %s\n", key)
 			continue
 		}
 
 		fmt.Printf("[SCA] Processing %d vulns for %s\n", len(vulns), key)
 
 		for _, v := range vulns {
-			fixed := ""
-			for _, aff := range v.Affected {
-				for _, r := range aff.Ranges {
-					for _, ev := range r.Events {
-						if ev.Fixed != "" {
-							fixed = ev.Fixed
-							break
-						}
-					}
-					if fixed != "" {
-						break
-					}
-				}
-				if fixed != "" {
-					break
-				}
-			}
-
-			ref := ""
-			if len(v.References) > 0 {
-				ref = v.References[0].URL
-			}
-
-			// Simple severity mapping if not present (OSV often omits CVSS in summary list)
-			// Ideally we should fetch details or parse schema.
-			severity := "High"
-
 			findings = append(findings, models.ScaFinding{
 				TaskID:       task.ID,
 				PackageName:  dep.Name,
 				Version:      dep.Version,
 				Language:     dep.Language,
-				VulnID:       v.ID,
-				Severity:     severity,
-				Description:  v.Summary,
-				FixedVersion: fixed,
-				Reference:    ref,
+				VulnID:       v.VulnID,
+				Severity:     v.Severity,
+				Description:  v.Summary + "\n" + v.Description,
+				FixedVersion: v.FixedVersion,
+				Reference:    v.References,
 				FilePath:     dep.FilePath,
 			})
 		}

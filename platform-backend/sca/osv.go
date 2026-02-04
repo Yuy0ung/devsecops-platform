@@ -74,7 +74,7 @@ func CheckVulns(deps []Dependency) (map[string][]OSVVuln, error) {
 				// Avoid resolving if version is ambiguous or empty
 				if dep.Version != "" {
 					fmt.Printf("[SCA] Missing GroupId for %s@%s, resolving via Maven Central...\n", dep.Name, dep.Version)
-					groupID, err := resolveMavenGroupId(dep.Name, dep.Version)
+					groupID, err := ResolveMavenGroupId(dep.Name, dep.Version)
 					if err == nil && groupID != "" {
 						fmt.Printf("[SCA] Resolved: %s -> %s:%s\n", dep.Name, groupID, dep.Name)
 						dep.Name = groupID + ":" + dep.Name
@@ -152,8 +152,8 @@ type MavenSearchResponse struct {
 	} `json:"response"`
 }
 
-// resolveMavenGroupId queries Maven Central to find the GroupId for a given ArtifactId and Version
-func resolveMavenGroupId(artifactId, version string) (string, error) {
+// ResolveMavenGroupId queries Maven Central to find the GroupId for a given ArtifactId and Version
+func ResolveMavenGroupId(artifactId, version string) (string, error) {
 	// API: https://search.maven.org/solrsearch/select?q=a:"artifactId"+AND+v:"version"&rows=1&wt=json
 	baseURL := "https://search.maven.org/solrsearch/select"
 	params := url.Values{}
